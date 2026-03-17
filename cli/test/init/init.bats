@@ -66,7 +66,7 @@ teardown() {
 	unset -f select_option
 	unset -f select_multiple
 
-	stub read_line "'Project name [empty for default]:' : echo ''"
+	stub read_line "* : echo ''"
 	stub select_option \
 		"'Select agent:' claude : echo claude" \
 		"'Select IDE:' vscode jetbrains none : echo vscode"
@@ -74,7 +74,7 @@ teardown() {
 		"'Select development stacks (comma-separated numbers, empty for none):' node python java rust go scala ruby dotnet : echo ''"
 
 	local expected_name
-	expected_name=$(basename "$PROJECT_DIR")-sandbox-devcontainer
+	expected_name=$(basename "$PROJECT_DIR")-sandbox
 	local settings_file=".sandcat/settings.json"
 
 	stub settings "$PROJECT_DIR/$settings_file claude vscode : :"

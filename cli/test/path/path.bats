@@ -40,10 +40,10 @@ teardown() {
 # derive_project_name tests
 
 
-@test "derive_project_name devcontainer mode produces {dir}-sandbox-devcontainer" {
-	run derive_project_name "/home/user/myproject" "devcontainer"
+@test "derive_project_name produces {dir}-sandbox" {
+	run derive_project_name "/home/user/myproject"
 	assert_success
-	assert_output "myproject-sandbox-devcontainer"
+	assert_output "myproject-sandbox"
 }
 
 

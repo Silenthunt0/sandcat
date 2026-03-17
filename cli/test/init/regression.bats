@@ -31,7 +31,7 @@ assert_proxy_service() {
 assert_agent_service() {
 	local compose_file=$1
 
-	yq -e '.services.agent.working_dir == "/workspaces/project-sandbox-devcontainer"' "$compose_file"
+	yq -e '.services.agent.working_dir == "/workspaces/project-sandbox"' "$compose_file"
 
 	yq -e '.services.agent.network_mode == "service:wg-client"' "$compose_file"
 
@@ -51,7 +51,7 @@ assert_common_volumes() {
 	# Bind: Project root
 	PROJECT_DIR="$PROJECT_DIR" yq -e '
 		.services.agent.volumes[] |
-		select(.type == "bind" and .source == env(PROJECT_DIR) and .target == "/workspaces/project-sandbox-devcontainer")
+		select(.type == "bind" and .source == env(PROJECT_DIR) and .target == "/workspaces/project-sandbox")
 	' "$compose_file"
 
 	# Bind: .sandcat (read-only)
@@ -60,7 +60,7 @@ assert_common_volumes() {
 		select(
 			.type == \"bind\" and
 			.source == (env(PROJECT_DIR) + \"/.sandcat\") and
-			.target == \"/workspaces/project-sandbox-devcontainer/.sandcat\" and
+			.target == \"/workspaces/project-sandbox/.sandcat\" and
 			.read_only == true
 		)
 	" "$compose_file"
@@ -183,7 +183,7 @@ assert_devcontainer_volume() {
 		select(
 			.type == \"bind\" and
 			.source == (env(PROJECT_DIR) + \"/.devcontainer\") and
-			.target == \"/workspaces/project-sandbox-devcontainer/.devcontainer\" and
+			.target == \"/workspaces/project-sandbox/.devcontainer\" and
 			.read_only == true
 		)
 	" "$compose_file"
@@ -229,7 +229,7 @@ claude_agent_compose_file_has_expected_content() {
 	local effective_file="$BATS_TEST_TMPDIR/effective-compose.yml"
 	docker compose -f "$PROJECT_DIR/.devcontainer/compose-all.yml" config > "$effective_file"
 
-	yq -e '.name == "project-sandbox-devcontainer"' "$effective_file"
+	yq -e '.name == "project-sandbox"' "$effective_file"
 
 	claude_agent_compose_file_has_expected_content "$effective_file"
 

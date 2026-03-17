@@ -39,7 +39,7 @@ Options:
 - `--agent` - The agent name (e.g., `claude`)
 - `--ide` - The IDE name (e.g., `vscode`, `jetbrains`, `none`) (optional)
 - `--stacks` - Space-separated development stacks (e.g., `"python java"`) (optional)
-- `--name` - Project name for Docker Compose (default: `{dir}-sandbox-devcontainer`)
+- `--name` - Project name for Docker Compose (default: `{dir}-sandbox`)
 
 #### `sandcat init settings`
 

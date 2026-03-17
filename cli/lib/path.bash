@@ -78,21 +78,14 @@ find_compose_file() {
 # Derives a project name from a project path and mode.
 # Args:
 #   $1 - The project path (absolute or relative)
-#   $2 - The mode (cli or devcontainer)
-# Returns {dir}-sandbox for cli mode, {dir}-sandbox-{mode} for other modes.
+# Returns {dir}-sandbox.
 derive_project_name() {
 	local project_path=$1
-	local mode=$2
 
 	local last_dir
 	last_dir=$(basename "$project_path")
 
-	if [[ "$mode" == "cli" ]]
-	then
-		echo "${last_dir}-sandbox"
-	else
-		echo "${last_dir}-sandbox-${mode}"
-	fi
+	echo "${last_dir}-sandbox"
 }
 
 # Gets the modification time of a file in a cross-platform way.

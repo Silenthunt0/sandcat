@@ -72,7 +72,7 @@ devcontainer() {
 	local rel_settings_file="../$settings_file"
 
 	local project_name
-	project_name="${name:-$(derive_project_name "$project_path" "devcontainer")}"
+	project_name="${name:-$(derive_project_name "$project_path")}"
 
 	# Customize Dockerfile and devcontainer.json with selected stacks
 	if [[ -n "$stacks" ]]; then
