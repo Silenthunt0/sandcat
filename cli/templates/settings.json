@@ -1,29 +1,9 @@
 {
-  "env": {
-    "GIT_USER_NAME": "Your Name",
-    "GIT_USER_EMAIL": "you@example.com"
-  },
   "network": [
     {
       "action": "allow",
       "host": "*",
       "method": "GET"
-    },
-    {
-      "action": "allow",
-      "host": "*.github.com"
-    },
-    {
-      "action": "allow",
-      "host": "github.com"
-    },
-    {
-      "action": "allow",
-      "host": "*.anthropic.com"
-    },
-    {
-      "action": "allow",
-      "host": "*.claude.com"
     }
   ]
 }

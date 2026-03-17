@@ -52,13 +52,14 @@ cloning this git repository.
 docker pull ghcr.io/virtuslab/sandcat
 
 # Add to your .bashrc or .zshrc
-alias sandcat='docker run --rm -it -v "/var/run/docker.sock:/var/run/docker.sock" -v"$PWD:$PWD" -w"$PWD" -e TERM -e HOME ghcr.io/virtuslab/sandcat'
+alias sandcat='docker run --rm -it -v "/var/run/docker.sock:/var/run/docker.sock" -v"$PWD:$PWD" -v"$HOME/.config/sandcat:$HOME/.config/sandcat" -w"$PWD" -e TERM -e HOME ghcr.io/virtuslab/sandcat'
 ```
 
-The CLI needs access to your current directory (to copy the configuration
-files), the host Docker socket (to start containers when running `sandcat run`),
-and a couple of environment variables (`TERM` for terminal handling, `HOME` so
-Docker Compose can resolve `~` in volume mounts).
+The CLI needs access to your current directory (to copy project configuration),
+the host Docker socket (to manage sandbox containers), your user config
+directory (`~/.config/sandcat/` to initialize the settings file), and a couple
+of environment variables (`TERM` for terminal handling, `HOME` so Docker Compose
+can resolve `~` in volume mounts).
 
 Using the Docker image disables the editor integration (`vi` installed in the
 image will be used instead of your host editor). Host environment variables are
@@ -103,10 +104,10 @@ install the corresponding VS Code extension (e.g. `rust-analyzer` for Rust,
 `metals` for Scala).
 
 Optional volume mounts (Claude config, shell customizations, dotfiles, .git,
-.idea) are included as commented-out entries in the generated compose
-file. Uncomment them as needed, or set `SANDCAT_*` environment variables for
-scripted usage. See the [CLI README](cli/README.md) for the full list of flags
-and environment variables.
+.idea) are included as commented-out entries in the generated compose file.
+Uncomment them as needed, or set `SANDCAT_*` environment variables for scripted
+usage. See the [CLI README](cli/README.md) for the full list of flags and
+environment variables.
 
 ### 3. Start the sandbox
 
@@ -162,7 +163,8 @@ A typical setup keeps user-specific settings (git identity, API keys) in the
 user file, project-wide network rules in the project file, and developer
 overrides in the local file:
 
-`~/.config/sandcat/settings.json` (user):
+`~/.config/sandcat/settings.json` (user — created by `sandcat init` on first
+run):
 
 ```json
 {
@@ -174,8 +176,20 @@ overrides in the local file:
     "ANTHROPIC_API_KEY": {
       "value": "sk-ant-real-key-here",
       "hosts": ["api.anthropic.com"]
+    },
+    "GITHUB_TOKEN": {
+      "value": "ghp_your-token-here",
+      "hosts": ["github.com", "*.github.com", "*.githubusercontent.com"]
     }
-  }
+  },
+  "network": [
+    {"action": "allow", "host": "*.github.com"},
+    {"action": "allow", "host": "github.com"},
+    {"action": "allow", "host": "*.githubusercontent.com"},
+    {"action": "allow", "host": "*.anthropic.com"},
+    {"action": "allow", "host": "*.claude.ai"},
+    {"action": "allow", "host": "*.claude.com"}
+  ]
 }
 ```
 
@@ -184,10 +198,7 @@ overrides in the local file:
 ```json
 {
   "network": [
-    {"action": "allow", "host": "*", "method": "GET"},
-    {"action": "allow", "host": "*.github.com"},
-    {"action": "allow", "host": "*.anthropic.com"},
-    {"action": "allow", "host": "*.claude.com"}
+    {"action": "allow", "host": "*", "method": "GET"}
   ]
 }
 ```
@@ -203,8 +214,9 @@ overrides in the local file:
 ```
 
 With these files, the merged network rules are (local first, then project, then
-user): allow `internal.corp.dev`, then the project rules. Env and secrets come
-from the user file since neither project file defines them.
+user): allow `internal.corp.dev`, then the project wildcard GET rule, then the
+user's GitHub/Anthropic rules. Env and secrets come from the user file since
+neither project file defines them.
 
 Warning: the liberal template allows all GET traffic, which means the agent can
 read arbitrary web content — a vector for prompt injection. The strict template

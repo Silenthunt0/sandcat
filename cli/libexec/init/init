@@ -14,6 +14,31 @@ source "$SCT_LIBDIR/path.bash"
 # shellcheck source=../../lib/stacks.bash
 source "$SCT_LIBDIR/stacks.bash"
 
+# Creates ~/.config/sandcat/settings.json if it doesn't already exist.
+# Derives git identity from the host's git config.
+create_user_settings() {
+	local user_settings_dir="$HOME/.config/sandcat"
+	local user_settings="$user_settings_dir/settings.json"
+
+	if [[ -f "$user_settings" ]]; then
+		return
+	fi
+
+	mkdir -p "$user_settings_dir"
+	cp "$SCT_TEMPLATEDIR/settings-user.json" "$user_settings"
+
+	# Derive git identity from host config
+	local git_name git_email
+	git_name=$(git config --global user.name 2>/dev/null || echo "")
+	git_email=$(git config --global user.email 2>/dev/null || echo "")
+
+	git_name="${git_name:-Your Name}" git_email="${git_email:-you@example.com}" \
+		yq -i -o json '
+			.env.GIT_USER_NAME = env(git_name) |
+			.env.GIT_USER_EMAIL = env(git_email)
+		' "$user_settings"
+}
+
 # Initializes sandcat for a project.
 # Prompts for any options not provided via flags.
 # Args:
@@ -128,18 +153,13 @@ init() {
 		fi
 	fi
 
-	if [[ -n "$stacks_resolved" ]]; then
-		echo "Development stacks: $stacks_resolved" | info
-		echo "Versions default to LTS where available. To change versions, edit .devcontainer/Dockerfile.app." | info
-		echo "VS Code extensions configured in .devcontainer/devcontainer.json." | info
-	fi
-
 	local services=("$agent")
 	if [[ "$ide" != "none" ]]
 	then
 		services+=("$ide")
 	fi
 
+	create_user_settings
 	settings "$project_path/$settings_file" "${services[@]}"
 	devcontainer \
 		--settings-file "$settings_file" \
@@ -148,6 +168,22 @@ init() {
 		--ide "$ide" \
 		--name "$name" \
 		--stacks "$stacks_resolved"
+
+	# Summary
+	echo "" >&2
+	echo "Initialization complete." | info
+	if [[ -n "$stacks_resolved" ]]; then
+		echo "  Stacks:           $stacks_resolved (edit .devcontainer/Dockerfile.app to change versions)" | info
+	fi
+	echo "  Project settings: $SCT_PROJECT_DIR/settings.json (network rules)" | info
+	echo "  User settings:    ~/.config/sandcat/settings.json (git identity, API keys)" | info
+	echo "  Devcontainer:     .devcontainer/" | info
+	echo "" >&2
+	echo "Next steps:" | info
+	echo "  Edit ~/.config/sandcat/settings.json to add your API keys:" | info
+	echo "    ANTHROPIC_API_KEY  your Anthropic API key (for Claude Code)" | info
+	echo "    GITHUB_TOKEN       a GitHub personal access token (for git push, gh cli)" | info
+	echo "  Then run: sandcat run, or reopen the project using the dev container" | info
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]
