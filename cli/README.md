@@ -70,10 +70,24 @@ Opens the Docker Compose file in your editor. If you save changes and containers
 Options:
 - `--no-restart` — Do not automatically restart containers after changes. When set (or when `SANDCAT_NO_RESTART=true`), a warning is shown instead with instructions to run `sandcat up -d` manually.
 
-### `sandcat edit settings`
+### `sandcat edit project-settings`
 
-Opens the network settings file in your editor. If you save changes, the proxy service will automatically restart to apply
-the new settings.
+Opens the project network settings file (`.sandcat/settings.json`) in your editor.
+
+### `sandcat edit user-settings`
+
+Opens the user-wide settings file (`~/.config/sandcat/settings.json`) in your editor. This file contains git
+identity, API key secrets, and service-specific network rules.
+
+### `sandcat edit dockerfile`
+
+Opens the container Dockerfile (`.devcontainer/Dockerfile.app`) in your editor. Use this to add or change
+development stack versions installed via mise.
+
+### `sandcat restart-proxy`
+
+Restarts the mitmproxy and wg-client services to pick up settings changes. Run this after editing any settings
+file (project or user) to apply the new configuration.
 
 ### `sandcat run`
 

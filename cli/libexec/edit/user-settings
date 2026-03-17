@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shellcheck source=../../lib/logging.bash
+source "$SCT_LIBDIR/logging.bash"
+# shellcheck source=../../lib/select.bash
+source "$SCT_LIBDIR/select.bash"
+
+# Opens the user-level settings file (~/.config/sandcat/settings.json) in the
+# default editor.
+user-settings() {
+	local user_settings="$HOME/.config/sandcat/settings.json"
+
+	if [[ ! -f "$user_settings" ]]
+	then
+		echo "No user settings file found: $user_settings" | error
+		echo "Run 'sandcat init' first to create it." | error
+		return 1
+	fi
+
+	open_editor "$user_settings"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]
+then
+	user-settings "$@"
+fi

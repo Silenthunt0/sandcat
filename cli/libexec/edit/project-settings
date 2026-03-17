@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shellcheck source=../../lib/logging.bash
+source "$SCT_LIBDIR/logging.bash"
+# shellcheck source=../../lib/constants.bash
+source "$SCT_LIBDIR/constants.bash"
+# shellcheck source=../../lib/select.bash
+source "$SCT_LIBDIR/select.bash"
+# shellcheck source=../../lib/path.bash
+source "$SCT_LIBDIR/path.bash"
+
+# Opens the project network settings file in the default editor.
+project-settings() {
+	local repo_root
+	repo_root="$(find_repo_root)"
+
+	local settings_file="$repo_root/$SCT_PROJECT_DIR/settings.json"
+
+	if [[ ! -f "$settings_file" ]]
+	then
+		echo "No settings file found: $settings_file" | error
+		return 1
+	fi
+
+	open_editor "$settings_file"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]
+then
+	project-settings "$@"
+fi

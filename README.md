@@ -231,14 +231,19 @@ Mitmproxy reads settings files only at startup (no hot-reload), and the app
 container sources `sandcat.env` only during its entrypoint. After editing any
 settings file, you need to restart services for changes to take effect.
 
-You can use the CLI helper command:
+You can use the CLI helper commands:
 
 ```sh
-sandcat edit settings
+sandcat edit project-settings   # project network rules (.sandcat/settings.json)
+sandcat edit user-settings      # API keys, git identity (~/.config/sandcat/settings.json)
+sandcat edit dockerfile         # container Dockerfile (.devcontainer/Dockerfile.app)
 ```
 
-This opens the network settings file in your editor. If you save changes, the
-proxy service will automatically restart to apply the new settings.
+After editing a settings file, restart the proxy to apply changes:
+
+```sh
+sandcat restart-proxy
+```
 
 Note that VS Code's **Rebuild Container** only rebuilds the `app` service — it
 does not restart `mitmproxy` or `wg-client`.

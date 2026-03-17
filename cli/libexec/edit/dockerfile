@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shellcheck source=../../lib/logging.bash
+source "$SCT_LIBDIR/logging.bash"
+# shellcheck source=../../lib/select.bash
+source "$SCT_LIBDIR/select.bash"
+# shellcheck source=../../lib/path.bash
+source "$SCT_LIBDIR/path.bash"
+
+# Opens the Dockerfile.app in the default editor.
+dockerfile() {
+	local repo_root
+	repo_root="$(find_repo_root)"
+
+	local dockerfile="$repo_root/.devcontainer/Dockerfile.app"
+
+	if [[ ! -f "$dockerfile" ]]
+	then
+		echo "No Dockerfile found: $dockerfile" | error
+		return 1
+	fi
+
+	open_editor "$dockerfile"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]
+then
+	dockerfile "$@"
+fi

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shellcheck source=../../lib/logging.bash
+source "$SCT_LIBDIR/logging.bash"
+# shellcheck source=../../lib/require.bash
+source "$SCT_LIBDIR/require.bash"
+# shellcheck source=../../lib/path.bash
+source "$SCT_LIBDIR/path.bash"
+
+# Restarts the mitmproxy and wg-client services to pick up settings changes.
+restart-proxy() {
+	require docker
+
+	local compose_file
+	compose_file="$(find_compose_file)"
+
+	local proxy_status
+	proxy_status=$(docker compose -f "$compose_file" ps mitmproxy --status running --quiet 2>/dev/null) || true
+
+	if [[ -z "$proxy_status" ]]; then
+		echo "Proxy service is not running." | warning
+		return 0
+	fi
+
+	echo "Restarting proxy service..." | info
+	docker compose -f "$compose_file" restart mitmproxy
+	docker compose -f "$compose_file" restart wg-client
+	echo "Proxy restarted. New settings are now active." | info
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]
+then
+	restart-proxy "$@"
+fi
