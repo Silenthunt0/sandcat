@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run a command in the agent container.
-# Ensures containers are running before executing the command.
-run() {
-	"$SCT_LIBEXECDIR/compose/compose" up -d
+# shellcheck source=../../lib/require.bash
+source "$SCT_LIBDIR/require.bash"
+# shellcheck source=../../lib/path.bash
+source "$SCT_LIBDIR/path.bash"
 
-	exec "$SCT_LIBEXECDIR/compose/compose" run --rm agent "${1-bash}" "${@:2}"
+# Run a command in the agent container.
+# Starts dependencies, runs the command, then tears everything down.
+run() {
+	require docker
+
+	local compose_file
+	compose_file="$(find_compose_file)"
+
+	docker compose -f "$compose_file" run --rm agent "${1-bash}" "${@:2}"
+	docker compose -f "$compose_file" down
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]

@@ -86,5 +86,6 @@ if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
     echo '{"hasCompletedOnboarding":true}' > "$HOME/.claude.json"
 fi
 
-# Best-effort: may fail if network isn't routed yet or CLI was just installed.
+# Update Claude Code to the latest version.
 claude update || true
+

@@ -11,15 +11,17 @@ COPY --chmod=755 sandcat/scripts/app-user-init.sh /usr/local/bin/app-user-init.s
 
 USER vscode
 
-# Install mise (SDK manager), then use it to install Node.js and Claude Code.
+# Install Claude Code (native binary — no Node.js required).
+RUN curl -fsSL https://claude.ai/install.sh | sh
+
+# Install mise (SDK manager) for language toolchains.
 RUN curl https://mise.run | sh
 # Make mise available in login shells (su - vscode) and Docker CMD/RUN.
 RUN echo 'export PATH="/home/vscode/.local/bin:/home/vscode/.local/share/mise/shims:$PATH"' >> /home/vscode/.profile
 ENV PATH="/home/vscode/.local/bin:/home/vscode/.local/share/mise/shims:$PATH"
-RUN mise use -g node@lts \
-    && npm install -g @anthropic-ai/claude-code
 
 # CUSTOMIZE: add your language toolchain here, e.g.:
+#   RUN mise use -g node@lts
 #   RUN mise use -g python@3.13
 #   RUN mise use -g rust@latest
 #   RUN mise use -g java@21

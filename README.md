@@ -126,7 +126,7 @@ stack:
 
 | Stack | mise command | CA trust notes |
 |-------|-------------|----------------|
-| TypeScript / Node.js | `mise use -g node@lts` (already installed) | Handled automatically by `app-init.sh` |
+| TypeScript / Node.js | `mise use -g node@lts` | Handled automatically by `app-init.sh` |
 | Python | `mise use -g python@3.13` | Uses system store — works out of the box |
 | Rust | `mise use -g rust@latest` | Use `rustls-tls-native-roots` in reqwest |
 | Java | `mise use -g java@21` | Handled automatically by `app-user-init.sh` |
