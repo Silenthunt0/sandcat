@@ -15,13 +15,14 @@ so the container never sees real values.
 This repository contains:
 
 * a bash CLI to initialize the sandbox for a project, copying and customizing
-  the necessary files
-* reusable proxy definitions: `Dockerfile.wg-client`, `compose-proxy.yml`, and
-  `scripts` that perform the network filtering & secret substitution
-* template application and dev container configuration: `Dockerfile.app`,
-  `compose-all.yml`, `devcontainer.json`. This should be fine-tuned for each
-  project and specific development stack, to install required tools and
-  dependencies.
+  the necessary files (see `cli/`)
+* reusable proxy definitions under `cli/templates/*/devcontainer/sandcat/`:
+  `Dockerfile.wg-client`, `compose-proxy.yml`, and `scripts/` that perform the
+  network filtering & secret substitution
+* template application and dev container configuration under
+  `cli/templates/*/devcontainer/`: `Dockerfile.app`, `compose-all.yml`,
+  `devcontainer.json`. This should be fine-tuned for each project and specific
+  development stack, to install required tools and dependencies.
 
 Sandcat can be used as a devcontainer setup, or standalone, providing a shell
 for secure development.
@@ -96,7 +97,7 @@ sandcat init --agent claude --ide vscode --stacks "python,node"
 
 Available stacks: `node`, `python`, `java`, `rust`, `go`, `scala`, `ruby`,
 `dotnet`. Versions default to LTS where available (e.g. Node.js LTS, Java LTS).
-To change versions after init, edit the `mise use` lines in
+To change versions after init, edit the `mise use` lines in the generated
 `.devcontainer/Dockerfile.app`.
 
 Selecting `scala` automatically includes `java` as a dependency. Stacks also
@@ -118,6 +119,7 @@ environment variables.
 sandcat run
 
 # Start your agent cli (e.g. claude). Because you're in a sandbox, you can use yolo mode!
+# (an alias for --dangerously-skip-permissions)
 claude-yolo
 ```
 
@@ -218,12 +220,12 @@ user): allow `internal.corp.dev`, then the project wildcard GET rule, then the
 user's GitHub/Anthropic rules. Env and secrets come from the user file since
 neither project file defines them.
 
-Warning: the liberal template allows all GET traffic, which means the agent can
-read arbitrary web content — a vector for prompt injection. The strict template
-narrows this to known service domains, but both templates allow full access to
-GitHub, which can be used to read untrusted content (prompt injection) or push
-data out (exfiltration). Malicious code might also be generated as part of the
-project itself.
+Warning: the default project settings allow all GET traffic, which means the
+agent can read arbitrary web content — a vector for prompt injection. Stricter
+settings would narrow this to known service domains. Note that the user-level
+settings allow full access to GitHub, which can be used to read untrusted
+content (prompt injection) or push data out (exfiltration). Malicious code might
+also be generated as part of the project itself.
 
 ## Applying configuration changes
 
@@ -245,8 +247,9 @@ After editing a settings file, restart the proxy to apply changes:
 sandcat restart-proxy
 ```
 
-Note that VS Code's **Rebuild Container** only rebuilds the `app` service — it
-does not restart `mitmproxy` or `wg-client`.
+Note that VS Code's **Rebuild Container** only rebuilds the `agent` service — it
+does not restart `mitmproxy` or `wg-client`. Use `sandcat restart-proxy` to
+apply settings changes.
 
 ## Network access rules
 
@@ -259,48 +262,26 @@ Each rule has:
 - `host` — glob pattern via fnmatch (required)
 - `method` — HTTP method to match; omit to match any method (optional)
 
-### Templates
+### Default settings
 
-Sandcat ships two example configurations. Copy one to get started and adjust to
-your needs:
+`sandcat init` creates two settings files automatically:
 
-**`settings.liberal.example.json`** — allows all HTTP GET requests to any host,
-plus full access (all methods) to GitHub and Anthropic/Claude. Convenient for
-development but means the agent can read arbitrary web content, which is a
-prompt injection vector:
+- **User settings** (`~/.config/sandcat/settings.json`) — allows full access to
+  GitHub and Anthropic/Claude, with empty API key placeholders. This is a
+  liberal default: the agent can read arbitrary GitHub content (prompt injection
+  vector) and push data (exfiltration vector).
+- **Project settings** (`.sandcat/settings.json`) — allows all GET traffic to
+  any host. This means the agent can read arbitrary web content, which is a
+  prompt injection vector.
 
-```sh
-cp settings.liberal.example.json ~/.config/sandcat/settings.json
-```
-
-**`settings.strict.example.json`** — allows only listed service domains. Full
-access (all methods) is limited to GitHub and Anthropic/Claude, which need POST
-for pushing code and API calls. All other domains are GET-only (downloads,
-package installs). You may need to add domains for your specific stack:
-
-```sh
-cp settings.strict.example.json ~/.config/sandcat/settings.json
-```
-
-The strict template narrows the attack surface compared to the liberal one, but
-does not eliminate it: the agent can still read arbitrary content from GitHub
-(issues, PRs, repository files) and write to it (commits, comments), which
-remains a prompt injection and data exfiltration vector.
-
-The strict template includes:
-
-| Service | Domains | Methods |
-|---------|---------|---------|
-| GitHub | `github.com`, `*.github.com`, `*.githubusercontent.com` | all |
-| Claude / Anthropic | `*.anthropic.com`, `*.claude.ai`, `*.claude.com` | all |
-| VS Code | `update.code.visualstudio.com`, `marketplace.visualstudio.com`, `*.vsassets.io`, `main.vscode-cdn.net` | GET |
-| npm | `registry.npmjs.org` | GET |
-| PyPI | `pypi.org`, `files.pythonhosted.org` | GET |
-
-Common additions for other stacks:
+For stricter configurations, edit the settings files to limit allowed domains.
+Common additions for specific stacks:
 
 | Stack | Domains |
 |-------|---------|
+| VS Code | `update.code.visualstudio.com`, `marketplace.visualstudio.com`, `*.vsassets.io`, `main.vscode-cdn.net` |
+| npm | `registry.npmjs.org` |
+| PyPI | `pypi.org`, `files.pythonhosted.org` |
 | Rust / Cargo | `crates.io`, `static.crates.io` |
 | Java / Maven | `repo.maven.apache.org`, `repo1.maven.org` |
 | JetBrains | `plugins.jetbrains.com`, `downloads.marketplace.jetbrains.com` |
@@ -735,7 +716,7 @@ enough for most tools — but some runtimes bring their own CA handling:
 Start the container from the command line:
 
 ```sh
-sandcat compose run
+sandcat run
 ```
 
 Tear down all containers and volumes (resets persisted home directory):
