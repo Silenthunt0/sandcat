@@ -17,7 +17,8 @@ source "$SCT_LIBDIR/stacks.bash"
 # Creates ~/.config/sandcat/settings.json if it doesn't already exist.
 # Derives git identity from the host's git config.
 create_user_settings() {
-	local user_settings_dir="$SCT_HOME"
+	local user_settings_dir
+	user_settings_dir="$(sct_home)"
 	local user_settings="$user_settings_dir/settings.json"
 
 	if [[ -f "$user_settings" ]]; then
@@ -65,7 +66,9 @@ init() {
 				echo "Option $1 requires a value" | error
 				return 1
 			fi
-			;;&
+			;;
+		esac
+		case $1 in
 		--name)
 			name="$2"
 			shift 2

@@ -11,7 +11,8 @@ source "$SCT_LIBDIR/constants.bash"
 # Opens the user-level settings file (~/.config/sandcat/settings.json) in the
 # default editor.
 user-settings() {
-	local user_settings="$SCT_HOME/settings.json"
+	local user_settings
+	user_settings="$(sct_home)/settings.json"
 
 	if [[ ! -f "$user_settings" ]]
 	then
