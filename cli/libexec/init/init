@@ -147,7 +147,11 @@ init() {
 	if [[ "$stacks_provided" == "true" ]] && [[ -n "$stacks_csv" ]]; then
 		local stacks_arr=()
 		IFS=',' read -ra stacks_arr <<< "$stacks_csv"
-		validate_stacks "${stacks_arr[@]}" || { echo "$(validate_stacks "${stacks_arr[@]}")" | error; return 1; }
+		local errmsg
+		if ! errmsg=$(validate_stacks "${stacks_arr[@]}"); then
+			echo "$errmsg" | error
+			return 1
+		fi
 		stacks_resolved=$(resolve_stacks "${stacks_arr[@]}")
 	elif [[ "$stacks_provided" != "true" ]]; then
 		local selected
