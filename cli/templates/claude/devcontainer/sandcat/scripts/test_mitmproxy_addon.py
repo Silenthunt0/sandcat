@@ -491,6 +491,9 @@ class TestShellEscaping:
         content = env_path.read_text()
         assert 'export X="\\$(rm -rf /)\\`cmd\\`"' in content
 
+    def test_newlines_escaped(self):
+        assert SandcatAddon._shell_escape("line1\nline2") == "line1\\nline2"
+
     def test_plain_values_unchanged(self):
         assert SandcatAddon._shell_escape("hello world") == "hello world"
         assert SandcatAddon._shell_escape("sk-ant-abc123") == "sk-ant-abc123"

@@ -99,7 +99,12 @@ class SandcatAddon:
     @staticmethod
     def _shell_escape(value: str) -> str:
         """Escape a string for safe inclusion inside double quotes in shell."""
-        return value.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`")
+        return (value
+                .replace("\\", "\\\\")
+                .replace('"', '\\"')
+                .replace("$", "\\$")
+                .replace("`", "\\`")
+                .replace("\n", "\\n"))
 
     @staticmethod
     def _validate_env_name(name: str):
