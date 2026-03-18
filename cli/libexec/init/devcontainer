@@ -71,9 +71,8 @@ devcontainer() {
 	local compose_file="$devcontainer_dir/compose-all.yml"
 
 	mkdir -p "$devcontainer_dir"
-	cp -r \
-		"$SCT_TEMPLATEDIR/$agent/devcontainer/"* \
-		"$devcontainer_dir"
+	# Use rsync-style copy to include dotfiles (glob * skips them)
+	cp -a "$SCT_TEMPLATEDIR/$agent/devcontainer/." "$devcontainer_dir/"
 
 	local rel_settings_file="../$settings_file"
 
