@@ -14,7 +14,10 @@ customize_devcontainer_json() {
 	local project_name=$2
 
 	# Use sed in a way that works on both BSD (macOS) and GNU (Linux)
-	sed -i.bak "s/__PROJECT_NAME__/${project_name}/g" "$devcontainer_json" && rm -f "${devcontainer_json}.bak"
+	# Escape sed metacharacters in project_name (& and \ have special meaning)
+	local escaped_name
+	escaped_name=$(printf '%s' "$project_name" | sed 's/[&\\/]/\\&/g')
+	sed -i.bak "s/__PROJECT_NAME__/${escaped_name}/g" "$devcontainer_json" && rm -f "${devcontainer_json}.bak"
 }
 
 # Inserts RUN mise lines into the Dockerfile for selected stacks.
