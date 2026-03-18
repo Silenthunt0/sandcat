@@ -87,5 +87,7 @@ if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
 fi
 
 # Update Claude Code to the latest version.
-claude update || true
+# Use 'install' instead of 'update' to also fix the install method config
+# (the curl|bash installer doesn't set it, causing a warning on 'update').
+claude install || true
 
