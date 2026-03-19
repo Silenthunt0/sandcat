@@ -582,27 +582,27 @@ HTTPS transparently.
 
 ## Testing the proxy
 
-You can inspect traffic using either the web UI or the terminal console. These
-commands are run on the host, from the project directory.
+The proxy mode is chosen during `sandcat init` via the `--proxy` flag (or
+interactively). Both modes run `sandcat proxy` from the host, in the project
+directory.
 
-**Web UI** — the host port is assigned dynamically. Look it up with:
-
-```sh
-sandcat compose port mitmproxy 8081
-```
-
-Or using Docker's UI. Log in with password `mitmproxy`.
-
-**Console (TUI)** — for terminal-based inspection:
+**Web UI** (default, `--proxy web`) — opens a browser-based interface:
 
 ```sh
-sandcat proxy
+sandcat proxy              # prints the mitmweb URL and password
+sandcat compose port mitmproxy 8081  # or look up the port manually
 ```
 
-This replaces the web UI with an interactive mitmproxy console. The WireGuard
-tunnel is briefly interrupted while switching modes and reconnects automatically.
-Press `q` to exit and restore the web UI. Useful in terminal-only environments
-(SSH sessions, remote servers) or when a browser adds overhead.
+Log in with password `mitmproxy`.
+
+**Console** (`--proxy tui`) — uses `mitmdump` to log flows as text:
+
+```sh
+sandcat proxy              # tails the mitmdump log (Ctrl+C to stop)
+```
+
+Useful in terminal-only environments (SSH sessions, remote servers) or when a
+browser adds overhead.
 
 To verify the kill switch blocks direct traffic:
 
