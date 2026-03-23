@@ -98,6 +98,25 @@ teardown() {
 	assert_output --partial "2) beta"
 }
 
+@test "select_multiple returns defaults on empty input" {
+	run --separate-stderr select_multiple "Pick:" "alpha" "beta" -- "beta" <<< ""
+	assert_success
+	assert_output "beta"
+}
+
+@test "select_multiple shows default marker" {
+	run select_multiple "Pick:" "alpha" "beta" -- "beta" <<< ""
+	assert_success
+	assert_output --partial "1) alpha"
+	assert_output --partial "2) beta (default)"
+}
+
+@test "select_multiple explicit selection overrides defaults" {
+	run --separate-stderr select_multiple "Pick:" "alpha" "beta" -- "beta" <<< "1"
+	assert_success
+	assert_output "alpha"
+}
+
 @test "select_multiple retries on invalid then accepts valid input" {
 	input=$'99\n2\n'
 	run select_multiple "Pick:" "alpha" "beta" "gamma" <<< "$input"

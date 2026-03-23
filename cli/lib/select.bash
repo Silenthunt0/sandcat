@@ -53,27 +53,53 @@ select_option() {
 
 # Prompts the user to select zero or more options from a list.
 # Shows a numbered list; user types comma-separated numbers (e.g. "1,3,5").
-# Empty input selects nothing.
+# Empty input selects nothing (or selects defaults if provided).
 # Args:
 #   $1 - The prompt text to display
-#   $@ - The options to present (remaining arguments)
+#   $@ - The options to present, optionally followed by -- and default selections
+# Example:
+#   select_multiple "Pick features:" tui 1password -- 1password
 # Outputs:
 #   Space-separated list of selected options to stdout (empty if none selected)
 select_multiple() {
 	local prompt="$1"
 	shift
-	local options=("$@")
-	local i
 
+	# Split args on -- into options and defaults
+	local options=()
+	local defaults=()
+	local seen_separator=false
+	for arg in "$@"; do
+		if [[ "$arg" == "--" ]]; then
+			seen_separator=true
+			continue
+		fi
+		if [[ "$seen_separator" == "true" ]]; then
+			defaults+=("$arg")
+		else
+			options+=("$arg")
+		fi
+	done
+
+	local i
 	for i in "${!options[@]}"; do
-		echo "  $((i+1))) ${options[$i]}" >&2
+		local marker=""
+		local d
+		for d in ${defaults[@]+"${defaults[@]}"}; do
+			if [[ "$d" == "${options[$i]}" ]]; then
+				marker=" (default)"
+				break
+			fi
+		done
+		echo "  $((i+1))) ${options[$i]}$marker" >&2
 	done
 
 	local reply
 	while true; do
 		read -rp "$prompt " reply >&2
 		if [[ -z $reply ]]; then
-			echo ""
+			# Return defaults on empty input
+			echo "${defaults[*]+${defaults[*]}}"
 			return
 		fi
 

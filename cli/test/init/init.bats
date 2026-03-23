@@ -8,6 +8,12 @@ setup() {
 
 	PROJECT_DIR="$BATS_TEST_TMPDIR/project"
 	mkdir -p "$PROJECT_DIR"
+
+	# Isolate from host user settings (e.g. op_service_account_token)
+	SCT_HOME_DIR="$BATS_TEST_TMPDIR/config/sandcat"
+	mkdir -p "$SCT_HOME_DIR"
+	sct_home() { echo "$SCT_HOME_DIR"; }
+	export -f sct_home
 }
 
 teardown() {
@@ -61,6 +67,37 @@ teardown() {
 	assert_success
 }
 
+@test "init pre-selects 1password when op token exists in user settings" {
+	unset -f read_line
+	unset -f select_option
+	unset -f select_multiple
+	unset -f add_op_token_to_user_settings
+
+	# Create user settings with a non-empty op token
+	echo '{"op_service_account_token": "ops_test123"}' > "$SCT_HOME_DIR/settings.json"
+
+	stub read_line "* : echo ''"
+	stub select_option \
+		"'Select agent:' claude : echo claude" \
+		"'Select IDE:' vscode jetbrains none : echo vscode"
+	stub select_multiple \
+		"'Select optional features (comma-separated numbers, enter for defaults):' tui 1password -- 1password : echo 1password" \
+		"'Select development stacks (comma-separated numbers, empty for none):' node python java rust go scala ruby dotnet : echo ''"
+	stub add_op_token_to_user_settings ":"
+
+	local expected_name
+	expected_name=$(basename "$PROJECT_DIR")-sandbox
+	local settings_file=".sandcat/settings.json"
+
+	stub settings "$PROJECT_DIR/$settings_file claude vscode : :"
+	stub devcontainer \
+		"--settings-file $settings_file --project-path $PROJECT_DIR --agent claude --ide vscode --name $expected_name --stacks '' --proxy web --1password : :"
+
+	run init --path "$PROJECT_DIR"
+
+	assert_success
+}
+
 @test "init interactive flow (devcontainer mode)" {
 	unset -f read_line
 	unset -f select_option
@@ -71,7 +108,7 @@ teardown() {
 		"'Select agent:' claude : echo claude" \
 		"'Select IDE:' vscode jetbrains none : echo vscode"
 	stub select_multiple \
-		"'Select optional features (comma-separated numbers, empty for none):' tui 1password : echo ''" \
+		"'Select optional features (comma-separated numbers, empty for none):' tui 1password -- : echo ''" \
 		"'Select development stacks (comma-separated numbers, empty for none):' node python java rust go scala ruby dotnet : echo ''"
 
 	local expected_name

@@ -184,8 +184,23 @@ init() {
 	# Optional features (tui, 1password)
 	if [[ "$features_provided" != "true" ]]; then
 		local available_features=(tui 1password)
+		local feature_defaults=()
+
+		# Pre-select 1password if user already has a non-empty op token configured
+		local existing_settings
+		existing_settings="$(sct_home)/settings.json"
+		if [[ -f "$existing_settings" ]] && \
+		   yq -e '.op_service_account_token // "" | select(. != "")' "$existing_settings" &>/dev/null; then
+			feature_defaults=(1password)
+		fi
+
+		local feature_prompt="Select optional features (comma-separated numbers, empty for none):"
+		if [[ ${#feature_defaults[@]} -gt 0 ]]; then
+			feature_prompt="Select optional features (comma-separated numbers, enter for defaults):"
+		fi
+
 		local selected_features
-		selected_features=$(select_multiple "Select optional features (comma-separated numbers, empty for none):" "${available_features[@]}")
+		selected_features=$(select_multiple "$feature_prompt" "${available_features[@]}" -- ${feature_defaults[@]+"${feature_defaults[@]}"})
 		if [[ -n "$selected_features" ]]; then
 			for f in $selected_features; do
 				case "$f" in
