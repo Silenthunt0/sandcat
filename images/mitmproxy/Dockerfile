@@ -12,7 +12,8 @@ FROM mitmproxy/mitmproxy:latest
 
 ARG OP_CLI_VERSION=2.30.3
 
-USER root
+# The upstream image runs as root; the entrypoint uses gosu to drop
+# privileges to the mitmproxy user. Do not add USER mitmproxy here.
 RUN ARCH=$(dpkg --print-architecture) \
     && apt-get update \
     && apt-get install -y --no-install-recommends curl unzip \
@@ -23,4 +24,3 @@ RUN ARCH=$(dpkg --print-architecture) \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/* \
     && op --version
-USER mitmproxy
