@@ -100,7 +100,11 @@ class SandcatAddon:
     def _load_secrets(self, raw_secrets: dict):
         for name, entry in raw_secrets.items():
             placeholder = f"SANDCAT_PLACEHOLDER_{name}"
-            value = self._resolve_secret_value(name, entry)
+            try:
+                value = self._resolve_secret_value(name, entry)
+            except (RuntimeError, ValueError) as e:
+                ctx.log.warn(str(e))
+                value = ""
             self.secrets[name] = {
                 "value": value,
                 "hosts": entry.get("hosts", []),

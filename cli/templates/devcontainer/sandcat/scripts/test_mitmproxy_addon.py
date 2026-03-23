@@ -599,6 +599,23 @@ class TestOpSecretResolution:
         content = env_path.read_text()
         assert 'export API_KEY="SANDCAT_PLACEHOLDER_API_KEY"' in content
 
+    def test_op_failure_logs_warning_and_continues(self, tmp_path):
+        settings = {"secrets": {
+            "BAD": {"op": "op://vault/item/field", "hosts": []},
+            "GOOD": {"value": "ok", "hosts": []},
+        }}
+        p = tmp_path / "settings.json"
+        p.write_text(json.dumps(settings))
+        env_path = tmp_path / "sandcat.env"
+        addon = SandcatAddon()
+        with patch("mitmproxy_addon.SETTINGS_PATHS", [str(p)]), \
+             patch("mitmproxy_addon.SANDCAT_ENV_PATH", str(env_path)), \
+             patch("mitmproxy_addon.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="vault not found")
+            addon.load(MagicMock())
+        assert addon.secrets["BAD"]["value"] == ""
+        assert addon.secrets["GOOD"]["value"] == "ok"
+
     def test_op_token_from_settings(self, tmp_path, monkeypatch):
         monkeypatch.delenv("OP_SERVICE_ACCOUNT_TOKEN", raising=False)
         settings = {
