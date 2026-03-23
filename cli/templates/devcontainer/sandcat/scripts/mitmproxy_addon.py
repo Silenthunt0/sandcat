@@ -18,6 +18,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 from fnmatch import fnmatch
 
 from mitmproxy import ctx, http, dns
@@ -104,7 +105,7 @@ class SandcatAddon:
                 value = self._resolve_secret_value(name, entry)
             except (RuntimeError, ValueError) as e:
                 ctx.log.warn(str(e))
-                logger.warning(str(e))
+                print(f"WARNING: {e}", file=sys.stderr)
                 value = ""
             self.secrets[name] = {
                 "value": value,
