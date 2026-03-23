@@ -104,6 +104,7 @@ class SandcatAddon:
                 value = self._resolve_secret_value(name, entry)
             except (RuntimeError, ValueError) as e:
                 ctx.log.warn(str(e))
+                logger.warning(str(e))
                 value = ""
             self.secrets[name] = {
                 "value": value,
