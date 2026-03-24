@@ -28,7 +28,7 @@ teardown() {
 	assert_output "mise use -g go@latest"
 
 	run stack_mise_cmd scala
-	assert_output "mise use -g scala@latest"
+	assert_output "mise use -g scala@latest && mise use -g sbt@latest"
 
 	run stack_mise_cmd ruby
 	assert_output "mise use -g ruby@latest"
