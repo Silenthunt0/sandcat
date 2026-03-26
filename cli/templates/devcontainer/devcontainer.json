@@ -21,7 +21,7 @@
 		"vscode": {
 			"extensions": [
 				"anthropic.claude-code",
-				"github.vscode-pull-request-github"
+				"github.vscode-pull-request-github",
 				// __STACK_EXTENSIONS__
 			],
 			"settings": {

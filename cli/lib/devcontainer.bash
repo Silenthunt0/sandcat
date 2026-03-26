@@ -66,7 +66,7 @@ customize_devcontainer_extensions() {
 
 	# Build the output file, replacing the placeholder line
 	local tmpfile="${devcontainer_json}.tmp"
-	while IFS= read -r line; do
+	while IFS= read -r line || [[ -n "$line" ]]; do
 		if [[ "$line" == *"__STACK_EXTENSIONS__"* ]]; then
 			if [[ -n "$ext_lines" ]]; then
 				printf '%s' "$ext_lines"
