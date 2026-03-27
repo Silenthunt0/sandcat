@@ -66,6 +66,17 @@ teardown() {
 	assert_equal "$after" "$before"
 }
 
+@test "customize_dockerfile handles ampersands in mise commands (scala)" {
+	customize_dockerfile "$DOCKERFILE" scala
+
+	run grep "mise use -g scala@latest && mise use -g sbt@latest" "$DOCKERFILE"
+	assert_success
+
+	# Verify the END STACKS marker is not corrupted
+	run grep "^# END STACKS$" "$DOCKERFILE"
+	assert_success
+}
+
 @test "customize_dockerfile preserves Java trust store block" {
 	customize_dockerfile "$DOCKERFILE" java
 

@@ -42,6 +42,9 @@ customize_dockerfile() {
 		fi
 	done
 
+	# Escape & which is special in sed replacement strings
+	insertion="${insertion//&/\\&}"
+
 	# Insert before the END STACKS marker (portable sed for BSD + GNU)
 	sed -i.bak "s|^# END STACKS|${insertion}# END STACKS|" "$dockerfile" && rm -f "${dockerfile}.bak"
 }
