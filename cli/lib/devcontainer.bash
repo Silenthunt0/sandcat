@@ -33,20 +33,28 @@ customize_dockerfile() {
 	fi
 	local stacks=("$@")
 
-	local insertion=""
+	local run_lines=()
 	local stack cmd
 	for stack in "${stacks[@]}"; do
 		cmd=$(stack_mise_cmd "$stack")
 		if [[ -n "$cmd" ]]; then
-			insertion="${insertion}RUN ${cmd}\n"
+			run_lines+=("RUN ${cmd}")
 		fi
 	done
 
-	# Escape & which is special in sed replacement strings
-	insertion="${insertion//&/\\&}"
-
-	# Insert before the END STACKS marker (portable sed for BSD + GNU)
-	sed -i.bak "s|^# END STACKS|${insertion}# END STACKS|" "$dockerfile" && rm -f "${dockerfile}.bak"
+	# Build the output file, inserting RUN lines before the END STACKS marker.
+	# Uses a while-read loop instead of sed to avoid & escaping issues.
+	local tmpfile="${dockerfile}.tmp"
+	while IFS= read -r line || [[ -n "$line" ]]; do
+		if [[ "$line" == "# END STACKS" ]]; then
+			local l
+			for l in "${run_lines[@]}"; do
+				printf '%s\n' "$l"
+			done
+		fi
+		printf '%s\n' "$line"
+	done < "$dockerfile" > "$tmpfile"
+	mv "$tmpfile" "$dockerfile"
 }
 
 # Adds VS Code extensions for selected stacks to devcontainer.json.
