@@ -13,6 +13,7 @@ Network rules are evaluated top-to-bottom, first match wins, default deny.
 Secret placeholders are replaced with real values only for allowed hosts.
 """
 
+import base64
 import json
 import logging
 import os
@@ -21,19 +22,20 @@ import subprocess
 import sys
 from fnmatch import fnmatch
 
-from mitmproxy import ctx, http, dns
+from mitmproxy import ctx, dns, http
 
 _VALID_ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 # Settings layers, lowest to highest precedence.
 SETTINGS_PATHS = [
-    "/config/settings.json",                # user:    ~/.config/sandcat/settings.json
-    "/config/project/settings.json",        # project: .sandcat/settings.json
+    "/config/settings.json",  # user:    ~/.config/sandcat/settings.json
+    "/config/project/settings.json",  # project: .sandcat/settings.json
     "/config/project/settings.local.json",  # local:   .sandcat/settings.local.json
 ]
 SANDCAT_ENV_PATH = "/home/mitmproxy/.mitmproxy/sandcat.env"
 
 logger = logging.getLogger(__name__)
+
 
 class SandcatAddon:
     def __init__(self):
@@ -95,8 +97,12 @@ class SandcatAddon:
         for layer in reversed(layers):
             network.extend(layer.get("network", []))
 
-        return {"env": env, "secrets": secrets, "network": network,
-                "op_service_account_token": op_token}
+        return {
+            "env": env,
+            "secrets": secrets,
+            "network": network,
+            "op_service_account_token": op_token,
+        }
 
     def _load_secrets(self, raw_secrets: dict):
         for name, entry in raw_secrets.items():
@@ -124,9 +130,7 @@ class SandcatAddon:
                 f"Secret {name!r}: specify either 'value' or 'op', not both"
             )
         if not has_value and not has_op:
-            raise ValueError(
-                f"Secret {name!r}: must specify either 'value' or 'op'"
-            )
+            raise ValueError(f"Secret {name!r}: must specify either 'value' or 'op'")
 
         if has_value:
             return entry["value"]
@@ -140,7 +144,9 @@ class SandcatAddon:
         try:
             result = subprocess.run(
                 ["op", "read", op_ref],
-                capture_output=True, text=True, timeout=30,
+                capture_output=True,
+                text=True,
+                timeout=30,
             )
         except FileNotFoundError:
             raise RuntimeError(
@@ -150,9 +156,7 @@ class SandcatAddon:
 
         if result.returncode != 0:
             stderr = result.stderr.strip()
-            raise RuntimeError(
-                f"Secret {name!r}: 'op read' failed: {stderr}"
-            )
+            raise RuntimeError(f"Secret {name!r}: 'op read' failed: {stderr}")
 
         return result.stdout.strip()
 
@@ -163,12 +167,13 @@ class SandcatAddon:
     @staticmethod
     def _shell_escape(value: str) -> str:
         """Escape a string for safe inclusion inside double quotes in shell."""
-        return (value
-                .replace("\\", "\\\\")
-                .replace('"', '\\"')
-                .replace("$", "\\$")
-                .replace("`", "\\`")
-                .replace("\n", "\\n"))
+        return (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("$", "\\$")
+            .replace("`", "\\`")
+            .replace("\n", "\\n")
+        )
 
     @staticmethod
     def _validate_env_name(name: str):
@@ -194,10 +199,14 @@ class SandcatAddon:
             if not fnmatch(host, rule["host"].lower()):
                 continue
             rule_method = rule.get("method")
-            if rule_method is not None and method is not None and rule_method.upper() != method.upper():
+            if (
+                rule_method is not None
+                and method is not None
+                and rule_method.upper() != method.upper()
+            ):
                 continue
             return rule["action"] == "allow"
-        return False # default deny
+        return False  # default deny
 
     def _substitute_secrets(self, flow: http.HTTPFlow):
         host = flow.request.pretty_host.lower()
@@ -207,6 +216,7 @@ class SandcatAddon:
             value = entry["value"]
             allowed_hosts = entry["hosts"]
 
+            # Check plain-text locations (URL, raw header values, body).
             present = (
                 placeholder in flow.request.url
                 or placeholder in str(flow.request.headers)
@@ -215,6 +225,22 @@ class SandcatAddon:
                     and placeholder.encode() in flow.request.content
                 )
             )
+
+            # Check inside base64-encoded Authorization: Basic headers.
+            # Git (and other HTTP clients) encode "user:password" as base64
+            # for Basic auth, hiding the placeholder from plain-text search.
+            basic_auth_decoded: str | None = None
+            if not present:
+                auth_header = flow.request.headers.get("authorization", "")
+                if auth_header.startswith("Basic "):
+                    try:
+                        basic_auth_decoded = base64.b64decode(auth_header[6:]).decode(
+                            "utf-8"
+                        )
+                        if placeholder in basic_auth_decoded:
+                            present = True
+                    except Exception:
+                        pass
 
             if not present:
                 continue
@@ -231,6 +257,7 @@ class SandcatAddon:
                 )
                 return
 
+            # Substitute in plain-text locations.
             if placeholder in flow.request.url:
                 flow.request.url = flow.request.url.replace(placeholder, value)
             for k, v in flow.request.headers.items():
@@ -240,6 +267,13 @@ class SandcatAddon:
                 flow.request.content = flow.request.content.replace(
                     placeholder.encode(), value.encode()
                 )
+
+            # Substitute inside base64-encoded Basic auth.
+            if basic_auth_decoded is not None and placeholder in basic_auth_decoded:
+                substituted = basic_auth_decoded.replace(placeholder, value)
+                flow.request.headers["authorization"] = "Basic " + base64.b64encode(
+                    substituted.encode("utf-8")
+                ).decode("ascii")
 
     def request(self, flow: http.HTTPFlow):
         method = flow.request.method

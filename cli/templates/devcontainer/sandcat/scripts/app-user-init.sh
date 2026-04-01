@@ -26,6 +26,17 @@ git config --global commit.gpgsign false
 git config --global --replace-all url."https://github.com/".insteadOf "git@github.com:" "git@github.com:"
 git config --global --replace-all url."https://github.com/".insteadOf "ssh://git@github.com/" "ssh://git@github.com/"
 
+# When GITHUB_TOKEN is available (injected as a Sandcat placeholder),
+# register gh as git's credential helper so git sends the placeholder
+# token in Basic auth headers. mitmproxy then swaps the placeholder
+# for the real token in flight.
+if command -v gh >/dev/null 2>&1 && [ -n "${GITHUB_TOKEN:-}" ]; then
+    gh auth setup-git
+fi
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+    echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> "$HOME/.npmrc"
+fi
+
 # If Java is installed (via mise), import the mitmproxy CA into Java's trust
 # store. Java uses its own cacerts and ignores the system CA store.
 CA_CERT="/mitmproxy-config/mitmproxy-ca-cert.pem"
@@ -82,11 +93,10 @@ fi
 
 # Seed the onboarding flag so Claude Code uses the API key without interactive
 # setup. Only written when the user configured an ANTHROPIC_API_KEY secret.
-if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+if [ -n "${ANTHROPIC_API_KEY:-}" ] || [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
     echo '{"hasCompletedOnboarding":true}' > "$HOME/.claude.json"
 fi
 
 # Claude Code is installed at build time (Dockerfile.app).
 # Background update so it doesn't block startup.
 (claude install >/dev/null 2>&1 &)
-

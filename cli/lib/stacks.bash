@@ -15,6 +15,7 @@ stack_mise_cmd() {
 		scala)  echo "mise use -g scala@latest && mise use -g sbt@latest" ;;
 		ruby)   echo "mise use -g ruby@latest" ;;
 		dotnet) echo "mise use -g dotnet@latest" ;;
+		pnpm)   echo "mise use -g pnpm@latest" ;;
 	esac
 }
 
