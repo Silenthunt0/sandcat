@@ -2,7 +2,7 @@
 # Development stack definitions for sandcat init.
 # Uses case functions instead of associative arrays for Bash 3.2 compatibility.
 
-STACK_NAMES=(node python java rust go scala ruby dotnet)
+STACK_NAMES=(node python java rust go scala ruby dotnet pnpm)
 
 # Returns the mise install command for a stack.
 stack_mise_cmd() {
